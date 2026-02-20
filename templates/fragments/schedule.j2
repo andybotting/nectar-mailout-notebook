@@ -1,0 +1,16 @@
+<br>
+<br>
+<table style="border: 1px solid black; border-collapse: collapse;">
+  <tr>
+    <td style="padding: 0.5em; border: 1px solid black; text-align: left; font-weight: bold;">Duration</td>
+    <td style="padding: 0.5em; border: 1px solid black; text-align: left;">{% if days > 0 %}{{ days }} day{% if days > 1 %}s{% endif %} {% endif %}{% if hours > 0 %}{{ hours }} hours{% endif %}</td>
+  </tr>
+  <tr>
+    <td style="padding: 0.5em; border: 1px solid black; text-align: left; font-weight: bold;">Start time</td>
+    <td style="padding: 0.5em; border: 1px solid black; text-align: left;">{{ start_ts }} {{ tz }}</td>
+  </tr>
+  <tr>
+    <td style="padding: 0.5em; border: 1px solid black; text-align: left; font-weight: bold;">End time</td>
+    <td style="padding: 0.5em; border: 1px solid black; text-align: left;">{{ end_ts }} {{ tz }}</td>
+  </tr>
+</table>

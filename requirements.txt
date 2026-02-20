@@ -1,0 +1,6 @@
+ipydatetime
+ipywidgets
+openstacksdk
+taynacclient
+python-keystoneclient
+jinja2

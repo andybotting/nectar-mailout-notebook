@@ -1,0 +1,41 @@
+{% if instances -%}
+<br>
+<br>
+<h2>Affected Instances</h2>
+<table style="border: 1px solid black; border-collapse: collapse;">
+  <thead>
+    <tr>
+      <th style="padding: 0.5em; border: 1px solid black; text-align: left;">ID</th>
+      <th style="padding: 0.5em; border: 1px solid black; text-align: left;">Name</th>
+      <th style="padding: 0.5em; border: 1px solid black; text-align: left;">IP Addresses</th>
+      <th style="padding: 0.5em; border: 1px solid black; text-align: left;">Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for instance in instances -%}
+    {% set ip_list = [] -%}
+    {% for network in instance.addresses.values() -%}
+        {% for ip in network -%}
+            {% set _ = ip_list.append(ip.addr) -%}
+        {% endfor -%}
+    {% endfor -%}
+    <tr>
+      <td style="padding: 0.5em; border: 1px solid black; text-align: left;">
+        {{ instance.id }}
+      </td>
+      <td style="padding: 0.5em; border: 1px solid black; text-align: left;">
+        {{ instance.name }}
+      </td>
+      <td style="padding: 0.5em; border: 1px solid black; text-align: left;">
+        {{ ip_list | join(', ') }}
+      </td>
+      <td style="padding: 0.5em; border: 1px solid black; text-align: left;">
+        {{ instance.status }}
+      </td>
+    </tr>
+    {% endfor -%}
+  </tbody>
+</table>
+<br>
+<br>
+{% endif %}
