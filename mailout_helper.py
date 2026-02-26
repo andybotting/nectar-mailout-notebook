@@ -10,9 +10,9 @@ from IPython.display import display, HTML
 
 
 LOG_LEVEL = logging.INFO
-#LOG_LEVEL = logging.DEBUG
+# LOG_LEVEL = logging.DEBUG
 
-logging.basicConfig(format='%(message)s')
+logging.basicConfig(format="%(message)s")
 LOG = logging.getLogger(__name__)
 LOG.setLevel(LOG_LEVEL)
 
@@ -27,34 +27,37 @@ class MailoutHelper:
     - Rendering Jinja2 templates
     - Sending notifications via Taynac
     """
-    def __init__(self, start_time=None, end_time=None,
-                 timezone='Australia/Melbourne'):
-        """Initialize the MailoutHelper.
 
-        """
+    def __init__(self, start_time=None, end_time=None, timezone="Australia/Melbourne"):
+        """Initialize the MailoutHelper."""
+        self.start_time = None
+        self.end_time = None
         self.timezone = timezone
-        self.start_time = self._parse_time(start_time, timezone)
-        self.end_time = self._parse_time(end_time, timezone)
+
+        if start_time:
+            self.start_time = self._parse_time(start_time, timezone)
+        if end_time:
+            self.end_time = self._parse_time(end_time, timezone)
 
         self.conn = None
         self.taynac = None
 
         # Set up template environment using 'templates' directory
         self.template_env = Environment(
-            loader=FileSystemLoader('templates'),
+            loader=FileSystemLoader("templates"),
             trim_blocks=True,
             undefined=StrictUndefined,
         )
 
     def _parse_time(self, time_input, timezone):
         """Parse time string
-        
-        Args: 
+
+        Args:
             time_input: A %Y-%m-%d %H:%M:%S formatted string
             timezone: A timezone string
         """
         tz = ZoneInfo(timezone)
-        dt = datetime.strptime(time_input, '%Y-%m-%d %H:%M:%S')
+        dt = datetime.strptime(time_input, "%Y-%m-%d %H:%M:%S")
         dt = dt.replace(tzinfo=tz)
         return dt.astimezone(tz)
 
@@ -69,24 +72,26 @@ class MailoutHelper:
             OpenStack connection object
         """
         if token is None:
-            token = getpass(prompt='Enter your OpenStack Token: ')
+            token = getpass(prompt="Enter your OpenStack Token: ")
 
         self.conn = openstack.connect(
             auth_url=auth_url,
             token=token,
-            auth_type='token',
+            auth_type="token",
         )
 
         # Verify token is valid
         auth_ref = self.conn.session.auth.get_auth_ref(self.conn.session)
         print(f"Token expires at: {auth_ref.expires}")
         return self.conn
-    
+
     def get_taynac_client(self):
         if self.taynac is None:
             if self.conn is None:
-                raise ValueError("OpenStack connection must be set up before sending notifications")
-        self.taynac = taynacclient.Client(version='1', session=self.conn.session)
+                raise ValueError(
+                    "OpenStack connection must be set up before sending notifications"
+                )
+        self.taynac = taynacclient.Client(version="1", session=self.conn.session)
         return self.taynac
 
     def set_times(self, start_time, end_time, timezone):
@@ -110,20 +115,20 @@ class MailoutHelper:
         Returns:
             Dictionary with context data including times and duration
         """
-        
+
         context = {}
         if project_data:
             context = project_data.copy()
 
         if self.start_time and self.end_time:
-            context['start_ts'] = self.start_time
-            context['end_ts'] = self.end_time
-            context['tz'] = self.timezone
+            context["start_ts"] = self.start_time
+            context["end_ts"] = self.end_time
+            context["tz"] = self.timezone
 
             # Calculate the duration
             duration = self.end_time - self.start_time
-            context['days'] = duration.days
-            context['hours'] = duration.seconds // 3600
+            context["days"] = duration.days
+            context["hours"] = duration.seconds // 3600
 
         return context
 
@@ -154,16 +159,14 @@ class MailoutHelper:
         users = []
 
         ras = self.conn.identity.role_assignments(
-            scope_project_id=project_id,
-            role_id=role_id,
-            include_names=True
+            scope_project_id=project_id, role_id=role_id, include_names=True
         )
         for ra in ras:
-            u = self.get_user(ra.user.get('id'))
+            u = self.get_user(ra.user.get("id"))
             if exclude_disabled and not u.enabled:
                 continue
             # Only include users with an email address
-            if getattr(u, 'email', None):
+            if getattr(u, "email", None):
                 users.append(u)
         return users
 
@@ -177,8 +180,10 @@ class MailoutHelper:
         Returns:
             List of user objects with Member role
         """
-        role_id = self.get_role('Member').get('id')
-        return self.get_project_users(project_id, role_id, exclude_disabled=exclude_disabled)
+        role_id = self.get_role("Member").get("id")
+        return self.get_project_users(
+            project_id, role_id, exclude_disabled=exclude_disabled
+        )
 
     def get_tenant_managers(self, project_id):
         """Get tenant manager emails for a project.
@@ -189,7 +194,7 @@ class MailoutHelper:
         Returns:
             List of user objects with TenantManager role
         """
-        role_id = self.get_role('TenantManager').get('id')
+        role_id = self.get_role("TenantManager").get("id")
         return self.get_project_users(project_id, role_id)
 
     def get_project(self, name_or_id):
@@ -284,19 +289,18 @@ class MailoutHelper:
         """
         data = {}
         for instance in instances:
-            project_id = instance['project_id']
+            project_id = instance["project_id"]
             if project_id not in data:
                 data[project_id] = {
-                    'project': self.get_project(project_id),
-                    'managers': self.get_tenant_managers(project_id),
-                    'members': self.get_project_members(project_id),
-                    'instances': [],
+                    "project": self.get_project(project_id),
+                    "managers": self.get_tenant_managers(project_id),
+                    "members": self.get_project_members(project_id),
+                    "instances": [],
                 }
-            data[project_id]['instances'].append(instance)
+            data[project_id]["instances"].append(instance)
         return data
-    
-    def generate_notifications_from_instances(
-            self, instance_data, subject, body):
+
+    def generate_notifications_from_instances(self, instance_data, subject, body):
         """Generate notification content.
 
         Args:
@@ -316,22 +320,21 @@ class MailoutHelper:
             # Build recipient list from OpenStack project Tenant Managers
             # and Members
             to_email, cc_emails = self.build_recipients(
-                project_data['managers'],
-                project_data['members']
+                project_data["managers"], project_data["members"]
             )
 
-            rendered_body = self.render_template_file(
-                body, context)
-            rendered_subject = self.render_template_string(
-                subject, context)
+            rendered_body = self.render_template_file(body, context)
+            rendered_subject = self.render_template_string(subject, context)
 
             # Generate notification
-            notifications.append({
-                'subject': rendered_subject,
-                'body': rendered_body,
-                'to': to_email,
-                'cc': cc_emails,
-            })
+            notifications.append(
+                {
+                    "subject": rendered_subject,
+                    "body": rendered_body,
+                    "to": to_email,
+                    "cc": cc_emails,
+                }
+            )
         return notifications
 
     def preview_notification(self, notification):
@@ -340,10 +343,10 @@ class MailoutHelper:
         Args:
             notification: Dictionary containing 'subject', 'body', 'to', and 'cc'
         """
-        display(notification.get('to'))
-        display(notification.get('cc', 'N/A'))
-        display(HTML(notification['subject']))
-        display(HTML(notification['body']))
+        display(notification.get("to"))
+        display(notification.get("cc", "N/A"))
+        display(HTML(notification["subject"]))
+        display(HTML(notification["body"]))
 
     def send_notification(self, notification):
         """Send notification via Taynac.
@@ -352,13 +355,9 @@ class MailoutHelper:
             notification: Dictionary containing 'subject', 'body', 'to', and 'cc'
         """
         taynac = self.get_taynac_client()
-
-        recipient = notification['to']
-        cc = notification['cc']
-
-        self.taynac.messages.send(
-            subject=notification['subject'],
-            body=notification['body'],
-            recipient=recipient,
-            cc=cc,
+        taynac.messages.send(
+            subject=notification["subject"],
+            body=notification["body"],
+            recipient=notification["to"],
+            cc=notification.get("cc", []),
         )
