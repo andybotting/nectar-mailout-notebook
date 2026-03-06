@@ -16,6 +16,9 @@ logging.basicConfig(format="%(message)s")
 LOG = logging.getLogger(__name__)
 LOG.setLevel(LOG_LEVEL)
 
+# Set our standard time format (2026-03-06 14:45)
+TIME_FORMAT = "%Y-%m-%d %H:%M"
+
 
 class MailoutHelper:
     """Helper class for managing mailout notifications.
@@ -30,14 +33,14 @@ class MailoutHelper:
 
     def __init__(self, start_time=None, end_time=None, timezone="Australia/Melbourne"):
         """Initialize the MailoutHelper."""
-        self.start_time = None
-        self.end_time = None
+        self._start_time = None
+        self._end_time = None
         self.timezone = timezone
 
         if start_time:
-            self.start_time = self._parse_time(start_time, timezone)
+            self._start_time = self._parse_time(start_time, timezone)
         if end_time:
-            self.end_time = self._parse_time(end_time, timezone)
+            self._end_time = self._parse_time(end_time, timezone)
 
         self.conn = None
         self.taynac = None
@@ -60,6 +63,28 @@ class MailoutHelper:
         dt = datetime.strptime(time_input, "%Y-%m-%d %H:%M:%S")
         dt = dt.replace(tzinfo=tz)
         return dt.astimezone(tz)
+
+    def set_times(self, start_time, end_time, timezone):
+        """Set the start time, end time, and timezone for notifications.
+
+        Args:
+            start_time: datetime object for the start time
+            end_time: datetime object for the end time
+            timezone: String representing the timezone (e.g., 'Australia/Melbourne')
+        """
+        self._start_time = self._parse_time(start_time, timezone)
+        self._end_time = self._parse_time(end_time, timezone)
+        self.timezone = timezone
+
+    @property
+    def start_time(self):
+        ts = self._start_time.strftime(TIME_FORMAT)
+        return f"{ts} {self.timezone}"
+
+    @property
+    def end_time(self):
+        ts = self._end_time.strftime(TIME_FORMAT)
+        return f"{ts} {self.timezone}"
 
     def setup_openstack(self, auth_url, token=None):
         """Set up OpenStack connection with token authentication.
@@ -94,18 +119,6 @@ class MailoutHelper:
         self.taynac = taynacclient.Client(version="1", session=self.conn.session)
         return self.taynac
 
-    def set_times(self, start_time, end_time, timezone):
-        """Set the start time, end time, and timezone for notifications.
-
-        Args:
-            start_time: datetime object for the start time
-            end_time: datetime object for the end time
-            timezone: String representing the timezone (e.g., 'Australia/Melbourne')
-        """
-        self.start_time = self._parse_time(start_time, timezone)
-        self.end_time = self._parse_time(end_time, timezone)
-        self.timezone = timezone
-
     def build_context(self, project_data=None):
         """Build notification context with project data and time information.
 
@@ -120,13 +133,13 @@ class MailoutHelper:
         if project_data:
             context = project_data.copy()
 
-        if self.start_time and self.end_time:
-            context["start_ts"] = self.start_time
-            context["end_ts"] = self.end_time
+        if self._start_time and self._end_time:
+            context["start_time"] = self.start_time
+            context["end_time"] = self.end_time
             context["tz"] = self.timezone
 
             # Calculate the duration
-            duration = self.end_time - self.start_time
+            duration = self._end_time - self._start_time
             context["days"] = duration.days
             context["hours"] = duration.seconds // 3600
 
