@@ -1,0 +1,87 @@
+{% include 'fragments/greeting.j2' %}
+<br>
+<br>
+This email is to let you know that the Nectar Research Cloud Application
+Catalog service will be retired on <b>{{ shutdown_date }}</b>. Your project
+<b>{{ project.name }}</b> has instances that were deployed through the
+Application Catalog service, and they are listed below.
+<br>
+<br>
+<h2>What is changing</h2>
+<br>
+From <b>{{ freeze_date }}</b>, new applications can no longer be deployed
+from the Application Catalog service. Your existing instances keep running, and
+you can keep using them as normal until {{ shutdown_date }}.
+<br>
+<br>
+On {{ shutdown_date }} the Application Catalog service will be switched off.
+<b>Your instances will not be deleted</b> at that point, but you will no
+longer be able to manage them through the Applications panel in the
+Dashboard. You can still manage them as ordinary instances from the
+Instances panel.
+<br>
+<br>
+<h2>What you need to do</h2>
+<br>
+<ul>
+  <li>
+    If you no longer need these instances, please delete them, along with
+    any volumes you do not need.
+  </li>
+  <li>
+    If you want to keep working, you can either keep your existing instances,
+    or launch new ones directly from the matching image. Our guide explains
+    how, including how to set up a DNS name and an HTTPS certificate, which
+    the Application Catalog service used to do for you:
+    <a href="{{ docs_url }}">{{ docs_url }}</a>
+  </li>
+  <li>
+    For lighter R or Python work, the ARDC Nectar Jupyter Notebook Service
+    may suit you better and needs no instance at all:
+    <a href="https://jupyterhub.rc.nectar.org.au/">jupyterhub.rc.nectar.org.au</a>
+  </li>
+  <li>
+    Back up any data you want to keep before you delete or replace an
+    instance.
+  </li>
+</ul>
+{% if environments -%}
+<br>
+<h2>Your Application Catalog service deployments</h2>
+<table style="border: 1px solid black; border-collapse: collapse;">
+  <thead>
+    <tr>
+      <th style="padding: 0.5em; border: 1px solid black; text-align: left;">Environment</th>
+      <th style="padding: 0.5em; border: 1px solid black; text-align: left;">Application</th>
+      <th style="padding: 0.5em; border: 1px solid black; text-align: left;">Instance</th>
+      <th style="padding: 0.5em; border: 1px solid black; text-align: left;">Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for env in environments -%}
+    {% for inst in env.instances -%}
+    <tr>
+      <td style="padding: 0.5em; border: 1px solid black; text-align: left;">{{ env.name }}</td>
+      <td style="padding: 0.5em; border: 1px solid black; text-align: left;">{{ inst.app }}</td>
+      <td style="padding: 0.5em; border: 1px solid black; text-align: left;">{{ inst.name }} ({{ inst.id }})</td>
+      <td style="padding: 0.5em; border: 1px solid black; text-align: left;">{{ inst.status }}</td>
+    </tr>
+    {% endfor -%}
+    {% endfor -%}
+  </tbody>
+</table>
+<br>
+{% endif -%}
+<br>
+If you have any questions, or need help moving your work, please reply to
+this email or contact <a href="mailto:support@ehelp.edu.au">support@ehelp.edu.au</a>.
+<br>
+<br>
+Regards,
+<br>
+ARDC Nectar Research Cloud Support Team
+<br>
+<br>
+<small><i>You are receiving this email because you are a member of a Nectar
+Research Cloud project that has instances deployed through the Application
+Catalog service.</i></small>

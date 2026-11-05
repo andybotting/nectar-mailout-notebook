@@ -176,7 +176,7 @@ class MailoutHelper:
         )
         for ra in ras:
             u = self.get_user(ra.user.get("id"))
-            if exclude_disabled and not u.enabled:
+            if exclude_disabled and not u.is_enabled:
                 continue
             # Only include users with an email address
             if getattr(u, "email", None):
